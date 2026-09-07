@@ -143,6 +143,7 @@ func (m Model) renderDetailView() string {
 	// Key-Value Table
 	keys := m.sortedKeys
 	if len(keys) == 0 {
+		keys = make([]string, 0, len(m.selectedSecret.Data))
 		for k := range m.selectedSecret.Data {
 			keys = append(keys, k)
 		}
@@ -168,7 +169,7 @@ func (m Model) renderDetailView() string {
 		}
 
 		// Check if value is a JSON string
-		var parsedMap map[string]interface{}
+		var parsedMap map[string]any
 		isJSON := isJSONString(val) && json.Unmarshal([]byte(val), &parsedMap) == nil
 
 		if isJSON {

@@ -209,7 +209,7 @@ func (m *Model) focusActiveField() {
 }
 
 func (m Model) collectEditorData() map[string]string {
-	data := make(map[string]string)
+	data := make(map[string]string, len(m.editKeyInputs))
 	for i := range m.editKeyInputs {
 		k := strings.TrimSpace(m.editKeyInputs[i].Value())
 		v := m.editValInputs[i].Value()
@@ -257,7 +257,7 @@ func (m Model) renderEditorView() string {
 		Render(m.editPathInput.View())
 
 	// Dynamic Rows
-	var rowViews []string
+	rowViews := make([]string, 0, len(m.editKeyInputs))
 	for i := range m.editKeyInputs {
 		kView := m.editKeyInputs[i].View()
 		vView := m.editValInputs[i].View()

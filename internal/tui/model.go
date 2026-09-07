@@ -524,7 +524,7 @@ func (m *Model) openStructBuilder(targetRow int, initialKey string, preset Struc
 	// If targetRow has existing valid JSON, parse it to prefill
 	if targetRow >= 0 && targetRow < len(m.editValInputs) {
 		valStr := m.editValInputs[targetRow].Value()
-		var parsed map[string]interface{}
+		var parsed map[string]any
 		if err := json.Unmarshal([]byte(valStr), &parsed); err == nil && len(parsed) > 0 {
 			m.initStructRowsFromMap(parsed)
 			m.state = StateStructBuilder
@@ -594,7 +594,7 @@ func (m *Model) initStructRows(fields []struct{ k, v string }) {
 	}
 }
 
-func (m *Model) initStructRowsFromMap(data map[string]interface{}) {
+func (m *Model) initStructRowsFromMap(data map[string]any) {
 	count := len(data)
 	if count == 0 {
 		m.applyStructPreset(PresetCustom)
@@ -614,7 +614,12 @@ func (m *Model) initStructRowsFromMap(data map[string]interface{}) {
 		vi.Placeholder = "sub-value"
 		vi.Prompt = "Sub-Value: "
 		vi.PromptStyle = lipgloss.NewStyle().Foreground(ColorSecondary)
-		vi.SetValue(fmt.Sprintf("%v", v))
+		switch val := v.(type) {
+		case string:
+			vi.SetValue(val)
+		default:
+			vi.SetValue(fmt.Sprintf("%v", val))
+		}
 
 		m.structKeyInputs[i] = ki
 		m.structValInputs[i] = vi
@@ -655,8 +660,8 @@ func (m *Model) removeCurrentStructRow() {
 		rowIdx = len(m.structKeyInputs) - 1
 	}
 
-	var newKeys []textinput.Model
-	var newVals []textinput.Model
+	newKeys := make([]textinput.Model, 0, len(m.structKeyInputs)-1)
+	newVals := make([]textinput.Model, 0, len(m.structValInputs)-1)
 	for i := range m.structKeyInputs {
 		if i != rowIdx {
 			newKeys = append(newKeys, m.structKeyInputs[i])
@@ -668,8 +673,8 @@ func (m *Model) removeCurrentStructRow() {
 	m.structActiveField = min(m.structActiveField, len(m.structKeyInputs)*2)
 }
 
-func (m Model) collectStructData() map[string]interface{} {
-	data := make(map[string]interface{})
+func (m Model) collectStructData() map[string]any {
+	data := make(map[string]any, len(m.structKeyInputs))
 	for i := range m.structKeyInputs {
 		k := strings.TrimSpace(m.structKeyInputs[i].Value())
 		v := m.structValInputs[i].Value()

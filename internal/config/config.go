@@ -95,24 +95,12 @@ func SaveToEnv(envFile string, updates map[string]string) error {
 		envFile = ".env"
 	}
 
-	existing := make(map[string]string)
-	lines := []string{}
+	var lines []string
 
 	if file, err := os.Open(envFile); err == nil {
 		scanner := bufio.NewScanner(file)
 		for scanner.Scan() {
-			line := scanner.Text()
-			trimmed := strings.TrimSpace(line)
-			if trimmed == "" || strings.HasPrefix(trimmed, "#") {
-				lines = append(lines, line)
-				continue
-			}
-			parts := strings.SplitN(line, "=", 2)
-			if len(parts) == 2 {
-				key := strings.TrimSpace(parts[0])
-				existing[key] = parts[1]
-			}
-			lines = append(lines, line)
+			lines = append(lines, scanner.Text())
 		}
 		scanErr := scanner.Err()
 		_ = file.Close()
@@ -122,8 +110,8 @@ func SaveToEnv(envFile string, updates map[string]string) error {
 	}
 
 	// Update existing lines or append new ones
-	updatedKeys := make(map[string]bool)
-	var newLines []string
+	updatedKeys := make(map[string]bool, len(updates))
+	newLines := make([]string, 0, len(lines)+len(updates))
 
 	for _, line := range lines {
 		trimmed := strings.TrimSpace(line)

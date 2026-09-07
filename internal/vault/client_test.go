@@ -190,7 +190,7 @@ func TestClient_KVv2_Lifecycle(t *testing.T) {
 				w.Write([]byte(`{"errors":[]}`))
 				return
 			}
-			rawMap := make(map[string]interface{})
+			rawMap := make(map[string]any, len(data))
 			for k, v := range data {
 				rawMap[k] = v
 			}

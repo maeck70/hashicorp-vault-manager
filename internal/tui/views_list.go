@@ -145,7 +145,7 @@ func (m Model) renderListView() string {
 			Padding(2, 4).
 			Render("No secrets found in this mount.\n\nPress [ n ] to create your first secret!\nPress [ r ] to reload from Vault.")
 	} else {
-		var lines []string
+		lines := make([]string, 0, len(m.filteredList))
 		for i, key := range m.filteredList {
 			cleanKey := strings.Trim(key, "/")
 			if i == m.selectedIndex {

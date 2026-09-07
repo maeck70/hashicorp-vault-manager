@@ -81,7 +81,7 @@ type UnsealResponse struct {
 type KVV2ReadResponse struct {
 	RequestID string `json:"request_id"`
 	Data      struct {
-		Data     map[string]interface{} `json:"data"`
+		Data     map[string]any `json:"data"`
 		Metadata struct {
 			CreatedTime  string `json:"created_time"`
 			DeletionTime string `json:"deletion_time"`
@@ -93,7 +93,7 @@ type KVV2ReadResponse struct {
 
 // KVV2WriteRequest represents the JSON payload for creating or updating a secret at /v1/{mount}/data/{path}.
 type KVV2WriteRequest struct {
-	Data map[string]interface{} `json:"data"`
+	Data map[string]any `json:"data"`
 }
 
 // KVV2ListResponse represents the keys list response from /v1/{mount}/metadata/{path}?list=true.

@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -208,7 +207,7 @@ func (c *Client) Unseal(ctx context.Context, key string) (*UnsealResponse, error
 
 // EnableKVv2 enables a KV v2 engine at the given mount if it doesn't already exist.
 func (c *Client) EnableKVv2(ctx context.Context, mount string) error {
-	payload := map[string]interface{}{
+	payload := map[string]any{
 		"type": "kv",
 		"options": map[string]string{
 			"version": "2",
@@ -235,11 +234,11 @@ func (c *Client) EnableKVv2(ctx context.Context, mount string) error {
 	}
 
 	// If already mounted, ignore error
-	errText := c.parseError(resp).Error()
-	if strings.Contains(errText, "path is already in use") {
+	parseErr := c.parseError(resp)
+	if strings.Contains(parseErr.Error(), "path is already in use") {
 		return nil
 	}
-	return errors.New(errText)
+	return parseErr
 }
 
 // ListSecrets lists keys under the given path in the KV v2 engine.
@@ -312,10 +311,15 @@ func (c *Client) GetSecret(ctx context.Context, path string) (*SecretItem, error
 		return nil, err
 	}
 
-	// Convert data map[string]interface{} to map[string]string
-	dataMap := make(map[string]string)
+	// Convert data map[string]any to map[string]string
+	dataMap := make(map[string]string, len(readResp.Data.Data))
 	for k, v := range readResp.Data.Data {
-		dataMap[k] = fmt.Sprintf("%v", v)
+		switch val := v.(type) {
+		case string:
+			dataMap[k] = val
+		default:
+			dataMap[k] = fmt.Sprintf("%v", val)
+		}
 	}
 
 	createdTime, _ := time.Parse(time.RFC3339Nano, readResp.Data.Metadata.CreatedTime)
@@ -341,7 +345,7 @@ func (c *Client) PutSecret(ctx context.Context, path string, data map[string]str
 	cleanPath := strings.Trim(path, "/")
 	reqURL := fmt.Sprintf("/v1/%s/data/%s", mount, cleanPath)
 
-	rawMap := make(map[string]interface{})
+	rawMap := make(map[string]any, len(data))
 	for k, v := range data {
 		rawMap[k] = v
 	}

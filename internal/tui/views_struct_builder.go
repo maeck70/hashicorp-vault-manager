@@ -190,7 +190,7 @@ func (m Model) renderStructBuilderView() string {
 		Render(m.structKeyInput.View())
 
 	// Sub-field Rows
-	var subRows []string
+	subRows := make([]string, 0, len(m.structKeyInputs))
 	for i := range m.structKeyInputs {
 		kView := m.structKeyInputs[i].View()
 		vView := m.structValInputs[i].View()

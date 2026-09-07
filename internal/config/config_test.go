@@ -3,6 +3,7 @@ package config
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -30,26 +31,13 @@ func TestSaveToEnv(t *testing.T) {
 	}
 
 	content := string(data)
-	if !contains(content, "EXISTING_KEY=updated_value") {
+	if !strings.Contains(content, "EXISTING_KEY=updated_value") {
 		t.Errorf("expected EXISTING_KEY=updated_value in content: %s", content)
 	}
-	if !contains(content, "NEW_KEY=new_value_123") {
+	if !strings.Contains(content, "NEW_KEY=new_value_123") {
 		t.Errorf("expected NEW_KEY=new_value_123 in content: %s", content)
 	}
-	if !contains(content, "KEEP_ME=yes") {
+	if !strings.Contains(content, "KEEP_ME=yes") {
 		t.Errorf("expected KEEP_ME=yes to be preserved in content: %s", content)
 	}
-}
-
-func contains(s, substr string) bool {
-	return len(s) >= len(substr) && (s == substr || (len(s) > len(substr) && stringContains(s, substr)))
-}
-
-func stringContains(s, substr string) bool {
-	for i := 0; i+len(substr) <= len(s); i++ {
-		if s[i:i+len(substr)] == substr {
-			return true
-		}
-	}
-	return false
 }

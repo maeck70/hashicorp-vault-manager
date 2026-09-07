@@ -42,6 +42,17 @@ type TemplateData struct {
 //go:embed resources/retrieval.go.tmpl
 var retrievalGoTemplate string
 
+var (
+	sanitizeRegex  = regexp.MustCompile(`[^a-zA-Z0-9_\-]+`)
+	splitWordRegex = regexp.MustCompile(`[^a-zA-Z0-9]+`)
+
+	retrievalTmpl = template.Must(template.New("retrieval").Funcs(template.FuncMap{
+		"jsonTag": func(k string) string {
+			return fmt.Sprintf("`json:\"%s\"`", k)
+		},
+	}).Parse(retrievalGoTemplate))
+)
+
 // GenerateGoRetrievalCode produces a complete, runnable Go source file that fetches
 // and decodes a specific secret from Vault using text/template.
 func GenerateGoRetrievalCode(vaultAddr, mount, path string, secretData map[string]string) string {
@@ -63,19 +74,8 @@ func GenerateGoRetrievalCode(vaultAddr, mount, path string, secretData map[strin
 		PlainKeys: plainKeys,
 	}
 
-	funcMap := template.FuncMap{
-		"jsonTag": func(k string) string {
-			return fmt.Sprintf("`json:\"%s\"`", k)
-		},
-	}
-
-	tmpl, err := template.New("retrieval").Funcs(funcMap).Parse(retrievalGoTemplate)
-	if err != nil {
-		return fmt.Sprintf("// Template parse error: %v", err)
-	}
-
 	var buf bytes.Buffer
-	if err := tmpl.Execute(&buf, data); err != nil {
+	if err := retrievalTmpl.Execute(&buf, data); err != nil {
 		return fmt.Sprintf("// Template execute error: %v", err)
 	}
 
@@ -106,7 +106,7 @@ func buildTemplateDataKeys(secretData map[string]string) ([]StructDef, []string)
 				}
 				sort.Strings(subKeys)
 
-				var fields []StructField
+				fields := make([]StructField, 0, len(subKeys))
 				for _, sk := range subKeys {
 					fields = append(fields, StructField{
 						Name:    toPascalCase(sk),
@@ -156,8 +156,7 @@ func isJSONString(s string) bool {
 // SanitizeFilename creates a safe filename from a secret path.
 func SanitizeFilename(path string) string {
 	clean := strings.Trim(path, "/")
-	re := regexp.MustCompile(`[^a-zA-Z0-9_\-]+`)
-	safe := re.ReplaceAllString(clean, "_")
+	safe := sanitizeRegex.ReplaceAllString(clean, "_")
 	if safe == "" {
 		safe = "secret"
 	}
@@ -180,8 +179,9 @@ func SaveRetrievalFile(dir, filename, code string) (string, error) {
 }
 
 func toPascalCase(s string) string {
-	parts := regexp.MustCompile(`[^a-zA-Z0-9]+`).Split(s, -1)
+	parts := splitWordRegex.Split(s, -1)
 	var sb strings.Builder
+	sb.Grow(len(s))
 	for _, p := range parts {
 		if len(p) > 0 {
 			sb.WriteString(strings.ToUpper(p[:1]))
