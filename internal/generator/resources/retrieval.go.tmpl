@@ -27,7 +27,7 @@ import (
 type VaultKVV2Response struct {
 	RequestID string {{ jsonTag "request_id" }}
 	Data      struct {
-		Data     map[string]interface{} {{ jsonTag "data" }}
+		Data     map[string]any {{ jsonTag "data" }}
 		Metadata struct {
 			CreatedTime  string {{ jsonTag "created_time" }}
 			DeletionTime string {{ jsonTag "deletion_time" }}

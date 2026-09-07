@@ -95,7 +95,7 @@ func buildTemplateDataKeys(secretData map[string]string) ([]StructDef, []string)
 	for _, k := range keys {
 		val := secretData[k]
 		if isJSONString(val) {
-			var parsed map[string]interface{}
+			var parsed map[string]any
 			if err := json.Unmarshal([]byte(val), &parsed); err == nil && len(parsed) > 0 {
 				typeName := toPascalCase(k) + "Config"
 				varName := toCamelCase(k)
@@ -131,11 +131,10 @@ func buildTemplateDataKeys(secretData map[string]string) ([]StructDef, []string)
 	return structs, plainKeys
 }
 
-func inferGoType(val interface{}) string {
-	switch val.(type) {
+func inferGoType(val any) string {
+	switch val := val.(type) {
 	case float64:
-		f := val.(float64)
-		if f == float64(int(f)) {
+		if val == float64(int(val)) {
 			return "int"
 		}
 		return "float64"
@@ -185,7 +184,8 @@ func toPascalCase(s string) string {
 	var sb strings.Builder
 	for _, p := range parts {
 		if len(p) > 0 {
-			sb.WriteString(strings.ToUpper(p[:1]) + p[1:])
+			sb.WriteString(strings.ToUpper(p[:1]))
+			sb.WriteString(p[1:])
 		}
 	}
 	res := sb.String()
