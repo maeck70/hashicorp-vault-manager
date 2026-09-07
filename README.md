@@ -29,6 +29,10 @@ A fast, intuitive, and colorful Terminal User Interface (TUI) in Go for managing
   - Masked values and nested passwords by default (`••••••••`) to prevent shoulder-surfing.
   - Toggle masking on/off with `m`.
   - One-key copy to system clipboard (`y` or `c`) for secret values and JSON payloads.
+- **Generate Go Retrieval Code**:
+  - Press `g` on any secret to generate a standalone, runnable Go program (`examples/get_<path>.go`) that demonstrates how to retrieve and decode that secret using only Go standard library (`net/http`).
+  - Automatically generates typed Go structs for any structured JSON keys (like `RabbitmqConfig`).
+  - Press `G` (Shift+G) to copy the generated Go source code directly to your clipboard.
 - **Search & Filter**: Real-time filtering across secret paths with `/`.
 
 ---
@@ -144,6 +148,8 @@ VAULT_UNSEAL_KEY=
 ### Secret Detail View
 - `m`: Toggle value masking (`••••••••` vs plain text)
 - `y` / `c`: Copy selected key value to clipboard
+- `g`: Generate standalone Go retrieval code file (`examples/get_<path>.go`)
+- `G`: Copy generated Go retrieval code directly to clipboard
 - `↑` / `k`: Select previous key-value row
 - `↓` / `j`: Select next key-value row
 - `e`: Edit this secret

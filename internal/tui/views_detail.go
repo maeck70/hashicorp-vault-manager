@@ -11,6 +11,8 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+
+	"vault-experiment/internal/generator"
 )
 
 // handleDetailKeys handles keyboard actions while viewing secret details.
@@ -48,6 +50,29 @@ func (m Model) handleDetailKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			key := m.sortedKeys[m.detailRowIndex]
 			val := m.selectedSecret.Data[key]
 			return m.copyToClipboard(val)
+		}
+		return m, nil
+
+	case "g":
+		// Generate external Go retrieval file
+		if m.selectedSecret != nil {
+			code := generator.GenerateGoRetrievalCode(m.client.Address(), m.client.Mount(), m.selectedSecret.Path, m.selectedSecret.Data)
+			filename := generator.SanitizeFilename(m.selectedSecret.Path)
+			filePath, err := generator.SaveRetrievalFile("examples", filename, code)
+			if err != nil {
+				m.toast = &Toast{Message: fmt.Sprintf("Failed to save Go file: %v", err), Type: ToastError}
+			} else {
+				m.toast = &Toast{Message: fmt.Sprintf("✓ Generated Go file: %s", filePath), Type: ToastSuccess}
+			}
+			return m, clearToastCmd()
+		}
+		return m, nil
+
+	case "G":
+		// Copy generated Go code directly to clipboard
+		if m.selectedSecret != nil {
+			code := generator.GenerateGoRetrievalCode(m.client.Address(), m.client.Mount(), m.selectedSecret.Path, m.selectedSecret.Data)
+			return m.copyToClipboard(code)
 		}
 		return m, nil
 
@@ -196,7 +221,7 @@ func (m Model) renderDetailView() string {
 
 	helpHints := lipgloss.NewStyle().
 		Foreground(ColorTextDim).
-		Render("[ m ] Toggle Mask • [ y / c ] Copy Value/JSON • [ e ] Edit • [ d ] Delete • [ Esc ] Back to List")
+		Render("[ m ] Mask • [ y ] Copy Val • [ g ] Gen Go File • [ G ] Copy Go Code • [ e ] Edit • [ d ] Del • [ Esc ] Back")
 
 	return lipgloss.JoinVertical(
 		lipgloss.Left,

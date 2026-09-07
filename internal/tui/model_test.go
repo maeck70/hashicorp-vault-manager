@@ -1,8 +1,11 @@
 package tui
 
 import (
+	"os"
 	"testing"
 	"time"
+
+	tea "github.com/charmbracelet/bubbletea"
 
 	"vault-experiment/internal/config"
 	"vault-experiment/internal/vault"
@@ -285,4 +288,45 @@ func TestTUI_DetailView_JSONRendering(t *testing.T) {
 		t.Errorf("expected 'secretpass' in unmasked view: %s", unmasked)
 	}
 }
+
+func TestTUI_DetailView_GenerateGoCode(t *testing.T) {
+	cfg := &config.Config{
+		Address: "http://10.0.0.180:8200",
+		Mount:   "secret",
+	}
+	client := vault.NewClient(cfg.Address, "", cfg.Mount)
+	m := NewModel(cfg, client)
+
+	item := &vault.SecretItem{
+		Path: "test/service",
+		Data: map[string]string{
+			"api_key": "123456",
+		},
+		Version:     1,
+		CreatedTime: time.Now(),
+	}
+
+	updated, _ := m.Update(SecretDetailMsg{Item: item})
+	m = updated.(Model)
+
+	// Press 'g'
+	updated, _ = m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'g'}})
+	m = updated.(Model)
+
+	if m.toast == nil || !contains(m.toast.Message, "Generated Go file") {
+		t.Errorf("expected toast confirming generated Go file, got: %v", m.toast)
+	}
+
+	expectedFile := "examples/get_test_service.go"
+	data, err := os.ReadFile(expectedFile)
+	if err != nil {
+		t.Fatalf("expected generated file %s to exist: %v", expectedFile, err)
+	}
+	defer os.Remove(expectedFile)
+
+	if !contains(string(data), "test/service") {
+		t.Errorf("expected secret path in generated file: %s", string(data))
+	}
+}
+
 

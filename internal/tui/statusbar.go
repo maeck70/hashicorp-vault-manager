@@ -105,7 +105,7 @@ func (m Model) renderStatusBar() string {
 	case StateList:
 		hotkeys = "[n] New  [/] Find  [r] Refresh  [q] Quit"
 	case StateDetail:
-		hotkeys = "[m] Mask  [y] Copy  [e] Edit  [d] Del  [Esc] Back"
+		hotkeys = "[m] Mask  [y] Copy  [g] GenGoFile  [G] CopyGoCode  [e] Edit  [Esc] Back"
 	case StateEditor:
 		hotkeys = "[Ctrl+S] Save  [Ctrl+T] Struct  [Ctrl+E] EditStruct  [Ctrl+N] Add  [Esc] Cancel"
 	case StateStructBuilder:
