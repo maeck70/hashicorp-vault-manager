@@ -201,8 +201,8 @@ func TestClient_KVv2_Lifecycle(t *testing.T) {
 			w.WriteHeader(http.StatusOK)
 			json.NewEncoder(w).Encode(readResp)
 
-		case r.Method == http.MethodDelete && r.URL.Path == "/v1/secret/data/webapp/db":
-			// Delete secret version
+		case r.Method == http.MethodDelete && (r.URL.Path == "/v1/secret/metadata/webapp/db" || r.URL.Path == "/v1/secret/data/webapp/db"):
+			// Delete secret metadata or version
 			delete(mockStore, "webapp/db")
 			w.WriteHeader(http.StatusNoContent)
 
@@ -254,5 +254,54 @@ func TestClient_KVv2_Lifecycle(t *testing.T) {
 	_, err = client.GetSecret(context.Background(), "webapp/db")
 	if err == nil {
 		t.Fatalf("expected error getting deleted secret, but got none")
+	}
+}
+
+func TestClient_GetSecret_SoftDeleted(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodGet && r.URL.Path == "/v1/secret/data/deleted-app" {
+			w.WriteHeader(http.StatusNotFound)
+			resp := `{
+				"request_id": "test-id",
+				"data": {
+					"data": null,
+					"metadata": {
+						"created_time": "2026-09-07T00:00:00Z",
+						"deletion_time": "2026-09-07T08:00:00Z",
+						"destroyed": false,
+						"version": 2
+					}
+				}
+			}`
+			w.Write([]byte(resp))
+			return
+		}
+		if r.Method == http.MethodPost && r.URL.Path == "/v1/secret/undelete/deleted-app" {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+		w.WriteHeader(http.StatusNotFound)
+	}))
+	defer server.Close()
+
+	client := NewClient(server.URL, "token", "secret")
+	item, err := client.GetSecret(context.Background(), "deleted-app")
+	if err != nil {
+		t.Fatalf("expected soft-deleted secret item, got error: %v", err)
+	}
+	if !item.IsDeleted {
+		t.Errorf("expected IsDeleted to be true")
+	}
+	if item.Version != 2 {
+		t.Errorf("expected Version 2, got %d", item.Version)
+	}
+	if item.DeletionTime.IsZero() {
+		t.Errorf("expected non-zero DeletionTime")
+	}
+
+	// Test Undelete
+	err = client.UndeleteSecret(context.Background(), "deleted-app", []int{2})
+	if err != nil {
+		t.Fatalf("UndeleteSecret failed: %v", err)
 	}
 }

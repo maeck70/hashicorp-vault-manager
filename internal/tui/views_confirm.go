@@ -39,7 +39,7 @@ func (m Model) renderConfirmDialog() string {
 	warningText := lipgloss.NewStyle().
 		Foreground(ColorText).
 		Render(fmt.Sprintf(
-			"Are you sure you want to delete the secret version at:\n\n%s\n\nThis will soft-delete the current version in KV v2.",
+			"Are you sure you want to permanently delete the secret:\n\n%s\n\nThis will purge all version history and metadata from Vault,\nremoving it permanently from the list.",
 			lipgloss.NewStyle().Bold(true).Foreground(ColorHighlight).Render("▶ "+m.client.Mount()+"/"+m.pendingDeletePath),
 		))
 
@@ -48,7 +48,7 @@ func (m Model) renderConfirmDialog() string {
 		Foreground(lipgloss.Color("#ffffff")).
 		Background(ColorDanger).
 		Padding(0, 2).
-		Render("Yes, Delete [ y ]")
+		Render("Yes, Permanently Delete [ y ]")
 
 	btnCancel := lipgloss.NewStyle().
 		Foreground(ColorTextDim).

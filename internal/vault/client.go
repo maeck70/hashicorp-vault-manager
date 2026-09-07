@@ -107,6 +107,10 @@ func (c *Client) parseError(resp *http.Response) error {
 		return fmt.Errorf("vault error (%d): %s", resp.StatusCode, strings.Join(errResp.Errors, ", "))
 	}
 
+	if resp.StatusCode == http.StatusNotFound {
+		return fmt.Errorf("not found (status 404)")
+	}
+
 	if len(body) > 0 {
 		return fmt.Errorf("vault error (%d): %s", resp.StatusCode, string(body))
 	}
@@ -302,6 +306,33 @@ func (c *Client) GetSecret(ctx context.Context, path string) (*SecretItem, error
 	}
 	defer resp.Body.Close()
 
+	if resp.StatusCode == http.StatusNotFound {
+		var readResp KVV2ReadResponse
+		if err := json.NewDecoder(resp.Body).Decode(&readResp); err == nil && readResp.Data.Metadata.Version > 0 {
+			var delTime time.Time
+			if readResp.Data.Metadata.DeletionTime != "" {
+				delTime, _ = time.Parse(time.RFC3339Nano, readResp.Data.Metadata.DeletionTime)
+				if delTime.IsZero() {
+					delTime, _ = time.Parse(time.RFC3339, readResp.Data.Metadata.DeletionTime)
+				}
+			}
+			createdTime, _ := time.Parse(time.RFC3339Nano, readResp.Data.Metadata.CreatedTime)
+			if createdTime.IsZero() {
+				createdTime, _ = time.Parse(time.RFC3339, readResp.Data.Metadata.CreatedTime)
+			}
+			return &SecretItem{
+				Path:         cleanPath,
+				Data:         make(map[string]string),
+				Version:      readResp.Data.Metadata.Version,
+				CreatedTime:  createdTime,
+				DeletionTime: delTime,
+				Destroyed:    readResp.Data.Metadata.Destroyed,
+				IsDeleted:    true,
+			}, nil
+		}
+		return nil, fmt.Errorf("secret '%s' not found", cleanPath)
+	}
+
 	if resp.StatusCode != http.StatusOK {
 		return nil, c.parseError(resp)
 	}
@@ -377,8 +408,14 @@ func (c *Client) PutSecret(ctx context.Context, path string, data map[string]str
 	return nil
 }
 
-// DeleteSecret soft-deletes the current version of the secret at /v1/{mount}/data/{path}.
+// DeleteSecret permanently deletes a secret and its entire version history at /v1/{mount}/metadata/{path}.
+// This guarantees the secret is completely removed and no longer returned in secret listings.
 func (c *Client) DeleteSecret(ctx context.Context, path string) error {
+	return c.DestroySecretMetadata(ctx, path)
+}
+
+// SoftDeleteSecret soft-deletes the current version of the secret at /v1/{mount}/data/{path}.
+func (c *Client) SoftDeleteSecret(ctx context.Context, path string) error {
 	c.mu.RLock()
 	mount := c.mount
 	c.mu.RUnlock()
@@ -387,6 +424,41 @@ func (c *Client) DeleteSecret(ctx context.Context, path string) error {
 	reqURL := fmt.Sprintf("/v1/%s/data/%s", mount, cleanPath)
 
 	req, err := c.newRequest(ctx, http.MethodDelete, reqURL, nil)
+	if err != nil {
+		return err
+	}
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNoContent {
+		return c.parseError(resp)
+	}
+
+	return nil
+}
+
+// UndeleteSecret restores soft-deleted versions of a secret at /v1/{mount}/undelete/{path}.
+func (c *Client) UndeleteSecret(ctx context.Context, path string, versions []int) error {
+	c.mu.RLock()
+	mount := c.mount
+	c.mu.RUnlock()
+
+	cleanPath := strings.Trim(path, "/")
+	reqURL := fmt.Sprintf("/v1/%s/undelete/%s", mount, cleanPath)
+
+	payload := map[string]any{
+		"versions": versions,
+	}
+	body, err := json.Marshal(payload)
+	if err != nil {
+		return err
+	}
+
+	req, err := c.newRequest(ctx, http.MethodPost, reqURL, bytes.NewReader(body))
 	if err != nil {
 		return err
 	}

@@ -117,8 +117,14 @@ type SecretItem struct {
 	// CreatedTime is the parsed timestamp when this version was committed.
 	CreatedTime time.Time
 
+	// DeletionTime is the timestamp when this version was soft-deleted, if applicable.
+	DeletionTime time.Time
+
 	// Destroyed indicates if this specific version has been destroyed.
 	Destroyed bool
+
+	// IsDeleted indicates whether the current version is soft-deleted.
+	IsDeleted bool
 }
 
 // VaultErrorResponse represents standard error output format from Vault API.

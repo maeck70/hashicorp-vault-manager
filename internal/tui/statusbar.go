@@ -90,6 +90,8 @@ func (m Model) renderStatusBar() string {
 		switch m.toast.Type {
 		case ToastSuccess:
 			toastStr = StyleToastSuccess.Render("  " + m.toast.Message)
+		case ToastWarning:
+			toastStr = StyleToastWarning.Render("  " + m.toast.Message)
 		case ToastError:
 			toastStr = StyleToastError.Render("  " + m.toast.Message)
 		default:

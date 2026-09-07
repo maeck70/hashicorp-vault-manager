@@ -67,13 +67,14 @@ const (
 type (
 	HealthMsg        struct{ Health *vault.HealthResponse }
 	SecretsLoadedMsg struct{ Keys []string }
-	SecretDetailMsg  struct{ Item *vault.SecretItem }
-	SecretSavedMsg   struct{ Path string }
-	SecretDeletedMsg struct{ Path string }
-	VaultInitMsg     struct{ Resp *vault.InitResponse }
-	VaultUnsealMsg   struct{ Resp *vault.UnsealResponse }
-	ErrMsg           struct{ Err error }
-	ToastClearMsg    struct{}
+	SecretDetailMsg   struct{ Item *vault.SecretItem }
+	SecretSavedMsg    struct{ Path string }
+	SecretDeletedMsg  struct{ Path string }
+	SecretUndeletedMsg struct{ Path string }
+	VaultInitMsg      struct{ Resp *vault.InitResponse }
+	VaultUnsealMsg    struct{ Resp *vault.UnsealResponse }
+	ErrMsg            struct{ Err error }
+	ToastClearMsg     struct{}
 )
 
 // ToastType defines visual toast style
@@ -82,6 +83,7 @@ type ToastType int
 const (
 	ToastInfo ToastType = iota
 	ToastSuccess
+	ToastWarning
 	ToastError
 )
 
@@ -314,6 +316,17 @@ func (m Model) deleteSecretCmd(path string) tea.Cmd {
 	}
 }
 
+func (m Model) undeleteSecretCmd(path string, version int) tea.Cmd {
+	return func() tea.Msg {
+		ctx, cancel := context.WithTimeout(context.Background(), 8*time.Second)
+		defer cancel()
+		if err := m.client.UndeleteSecret(ctx, path, []int{version}); err != nil {
+			return ErrMsg{Err: err}
+		}
+		return SecretUndeletedMsg{Path: path}
+	}
+}
+
 func clearToastCmd() tea.Cmd {
 	return tea.Tick(3*time.Second, func(time.Time) tea.Msg {
 		return ToastClearMsg{}
@@ -420,9 +433,15 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, tea.Batch(m.loadSecretsCmd(), clearToastCmd())
 
 	case SecretDeletedMsg:
-		m.toast = &Toast{Message: fmt.Sprintf("✓ Secret '%s' deleted!", msg.Path), Type: ToastSuccess}
+		m.toast = &Toast{Message: fmt.Sprintf("✓ Secret '%s' permanently deleted!", msg.Path), Type: ToastSuccess}
 		m.state = StateList
+		m.selectedSecret = nil
+		m.detailRowIndex = 0
 		return m, tea.Batch(m.loadSecretsCmd(), clearToastCmd())
+
+	case SecretUndeletedMsg:
+		m.toast = &Toast{Message: fmt.Sprintf("✓ Secret '%s' restored!", msg.Path), Type: ToastSuccess}
+		return m, tea.Batch(m.loadSecretDetailCmd(msg.Path), m.loadSecretsCmd(), clearToastCmd())
 
 	case ErrMsg:
 		m.err = msg.Err

@@ -328,3 +328,66 @@ func TestTUI_DetailView_GenerateGoCode(t *testing.T) {
 		t.Errorf("expected secret path in generated file: %s", string(data))
 	}
 }
+
+func TestTUI_DetailView_SoftDeleted(t *testing.T) {
+	cfg := &config.Config{Address: "http://10.0.0.180:8200", Mount: "secret"}
+	client := vault.NewClient(cfg.Address, "token", cfg.Mount)
+	m := NewModel(cfg, client)
+
+	deletedItem := &vault.SecretItem{
+		Path:         "jombieshare",
+		Data:         map[string]string{},
+		Version:      1,
+		CreatedTime:  time.Now().Add(-1 * time.Hour),
+		DeletionTime: time.Now(),
+		IsDeleted:    true,
+	}
+
+	updated, _ := m.Update(SecretDetailMsg{Item: deletedItem})
+	m = updated.(Model)
+
+	view := m.renderDetailView()
+	if !contains(view, "SOFT-DELETED") {
+		t.Errorf("expected 'SOFT-DELETED' in rendered view for soft-deleted secret: %s", view)
+	}
+	if !contains(view, "THIS SECRET VERSION WAS SOFT-DELETED") {
+		t.Errorf("expected soft-deleted warning banner in rendered view: %s", view)
+	}
+
+	// Trying to generate Go code on a deleted secret should trigger a warning toast
+	updated, _ = m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'g'}})
+	m = updated.(Model)
+	if m.toast == nil || m.toast.Type != ToastWarning {
+		t.Errorf("expected warning toast when generating code for deleted secret, got: %v", m.toast)
+	}
+}
+
+func TestTUI_DeletionLifecycle(t *testing.T) {
+	cfg := &config.Config{Address: "http://10.0.0.180:8200", Mount: "secret"}
+	client := vault.NewClient(cfg.Address, "token", cfg.Mount)
+	m := NewModel(cfg, client)
+
+	item := &vault.SecretItem{
+		Path:        "general",
+		Data:        map[string]string{"foo": "bar"},
+		Version:     1,
+		CreatedTime: time.Now(),
+	}
+
+	updated, _ := m.Update(SecretDetailMsg{Item: item})
+	m = updated.(Model)
+
+	// Simulate SecretDeletedMsg
+	updated, _ = m.Update(SecretDeletedMsg{Path: "general"})
+	m = updated.(Model)
+
+	if m.state != StateList {
+		t.Errorf("expected state to reset to StateList after deletion, got: %v", m.state)
+	}
+	if m.selectedSecret != nil {
+		t.Errorf("expected selectedSecret to be nil after deletion")
+	}
+	if m.toast == nil || !contains(m.toast.Message, "permanently deleted") {
+		t.Errorf("expected permanent deletion confirmation toast, got: %v", m.toast)
+	}
+}

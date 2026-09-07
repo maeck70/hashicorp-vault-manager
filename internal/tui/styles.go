@@ -58,6 +58,12 @@ var (
 			Background(lipgloss.Color("#3b82f6")).
 			Padding(0, 1)
 
+	BadgeDanger = lipgloss.NewStyle().
+			Bold(true).
+			Foreground(lipgloss.Color("#ffffff")).
+			Background(ColorDanger).
+			Padding(0, 1)
+
 	// Panels & Boxes
 	StyleCard = lipgloss.NewStyle().
 			Border(lipgloss.RoundedBorder()).
@@ -129,6 +135,10 @@ var (
 
 	StyleToastInfo = lipgloss.NewStyle().
 			Foreground(ColorSecondary).
+			Bold(true)
+
+	StyleToastWarning = lipgloss.NewStyle().
+			Foreground(ColorWarning).
 			Bold(true)
 
 	// JSON & Preset Badges
