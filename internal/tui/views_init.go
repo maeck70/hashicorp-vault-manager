@@ -1,3 +1,6 @@
+// views_init.go provides the terminal interface and key handlers for
+// initializing an uninitialized Vault instance and unsealing a sealed Vault.
+
 package tui
 
 import (
@@ -8,6 +11,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
+// handleInitKeys processes keyboard navigation and submission on the initialization screen.
 func (m Model) handleInitKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	switch msg.String() {
 	case "tab", "shift+tab", "up", "down":

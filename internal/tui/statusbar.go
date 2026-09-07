@@ -1,3 +1,6 @@
+// statusbar.go provides the bottom status bar showing Vault connectivity,
+// seal status, current mount, toast alerts, and contextual keyboard shortcut hints.
+
 package tui
 
 import (

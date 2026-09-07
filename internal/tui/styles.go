@@ -1,3 +1,5 @@
+// Package tui provides the terminal user interface for HashiCorp Vault management,
+// built using the Charm ecosystem (Bubble Tea, Bubbles, and Lip Gloss).
 package tui
 
 import "github.com/charmbracelet/lipgloss"

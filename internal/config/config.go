@@ -1,3 +1,10 @@
+// Package config manages application configuration parsing, environment
+// variable loading, and local .env persistence for the Vault TUI.
+//
+// Configuration precedence follows:
+//  1. Explicit command-line flags (e.g. -addr, -token, -mount)
+//  2. Environment variables from active shell and .env file (via godotenv)
+//  3. Default fallback values (e.g. http://10.0.0.180:8200)
 package config
 
 import (
@@ -12,21 +19,31 @@ import (
 
 // Config holds runtime configuration for the Vault TUI.
 type Config struct {
-	Address   string
-	Token     string
-	Mount     string
+	// Address is the base URL of the HashiCorp Vault server (e.g. "http://10.0.0.180:8200").
+	Address string
+
+	// Token is the Vault client authentication token (e.g. root token or service token).
+	Token string
+
+	// Mount is the KV v2 secret engine mount path (default: "secret").
+	Mount string
+
+	// UnsealKey is an optional unseal shard key supplied via CLI or .env.
 	UnsealKey string
-	EnvFile   string
+
+	// EnvFile is the path to the environment file (default: ".env").
+	EnvFile string
 }
 
 // Load parses command-line flags and merges with environment variables / .env file.
+// It initializes a custom FlagSet to prevent interference during testing.
 func Load() (*Config, error) {
 	fs := flag.NewFlagSet("vault-tui", flag.ContinueOnError)
 
 	var envFile string
 	fs.StringVar(&envFile, "env", ".env", "Path to .env configuration file")
 
-	// Pre-load .env file if available
+	// Pre-load .env file if available (ignores error if file doesn't exist yet)
 	_ = godotenv.Load(envFile)
 
 	defaultAddr := os.Getenv("VAULT_ADDR")
@@ -71,6 +88,8 @@ func Load() (*Config, error) {
 }
 
 // SaveToEnv updates or appends key-values into the specified .env file.
+// Comments and formatting in existing files are preserved, and updated
+// files are written with restricted permissions (0600) to protect secrets.
 func SaveToEnv(envFile string, updates map[string]string) error {
 	if envFile == "" {
 		envFile = ".env"

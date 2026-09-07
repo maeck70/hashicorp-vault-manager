@@ -1,3 +1,6 @@
+// views_list.go implements the secret path explorer, supporting real-time
+// filtering, path selection, and initiating CRUD operations.
+
 package tui
 
 import (
@@ -8,6 +11,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
+// handleListKeys handles navigation, filtering, and action triggers on the secrets list.
 func (m Model) handleListKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	// If currently in filter input mode
 	if m.isFiltering {

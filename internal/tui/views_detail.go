@@ -1,3 +1,6 @@
+// views_detail.go renders the secret key-value inspection view, including
+// formatted sub-trees for JSON objects, masking toggles, and clipboard actions.
+
 package tui
 
 import (
@@ -10,6 +13,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
+// handleDetailKeys handles keyboard actions while viewing secret details.
 func (m Model) handleDetailKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	switch msg.String() {
 	case "esc", "backspace", "left", "h":

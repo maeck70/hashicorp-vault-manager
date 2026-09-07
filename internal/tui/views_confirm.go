@@ -1,3 +1,5 @@
+// views_confirm.go renders the deletion confirmation modal dialog.
+
 package tui
 
 import (
@@ -7,6 +9,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
+// handleConfirmKeys processes yes/no confirmations for secret deletion.
 func (m Model) handleConfirmKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	switch msg.String() {
 	case "y", "Y":

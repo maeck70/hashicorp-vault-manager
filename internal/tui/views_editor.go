@@ -1,3 +1,6 @@
+// views_editor.go provides the multi-row form and raw JSON mode for creating
+// and editing secrets, as well as launching the JSON Structure Builder.
+
 package tui
 
 import (
@@ -10,6 +13,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
+// handleEditorKeys routes keyboard input between path, dynamic key-value rows, and action shortcuts.
 func (m Model) handleEditorKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	// Toggle JSON mode
 	if msg.String() == "ctrl+j" {

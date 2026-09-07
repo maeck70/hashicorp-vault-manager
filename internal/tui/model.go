@@ -17,27 +17,49 @@ import (
 	"vault-experiment/internal/vault"
 )
 
-// ViewState represents the active screen in the TUI.
+// ViewState represents the active screen or dialog within the TUI state machine.
 type ViewState int
 
 const (
+	// StateChecking indicates the initial startup phase while connecting to Vault.
 	StateChecking ViewState = iota
+
+	// StateInit indicates the Vault initialization wizard screen.
 	StateInit
+
+	// StateUnseal indicates the Vault unseal screen.
 	StateUnseal
+
+	// StateList indicates the main secret browser path listing screen.
 	StateList
+
+	// StateDetail indicates the secret key-value inspection screen.
 	StateDetail
+
+	// StateEditor indicates the secret creation and edit form screen.
 	StateEditor
+
+	// StateConfirm indicates the delete confirmation modal.
 	StateConfirm
+
+	// StateStructBuilder indicates the nested JSON structure builder wizard.
 	StateStructBuilder
 )
 
-// StructPreset defines quick templates for complex services
+// StructPreset defines pre-configured templates for complex service connection strings.
 type StructPreset int
 
 const (
+	// PresetRabbitMQ provides fields for host, port, username, password, and namespace.
 	PresetRabbitMQ StructPreset = iota
+
+	// PresetPostgres provides fields for host, port, database, username, and password.
 	PresetPostgres
+
+	// PresetRedis provides fields for host, port, password, and database.
 	PresetRedis
+
+	// PresetCustom provides a blank template with dynamic field addition.
 	PresetCustom
 )
 

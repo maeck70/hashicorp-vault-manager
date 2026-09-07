@@ -1,4 +1,4 @@
-# HashiCorp Vault Experimental TUI
+# HashiCorp Vault TUI to manage secrets.
 
 A fast, intuitive, and colorful Terminal User Interface (TUI) in Go for managing secrets on HashiCorp Vault. Designed specifically for experimental and rapid development workflows, with built-in in-terminal initialization, unsealing, and complete KV v2 secret lifecycle management.
 

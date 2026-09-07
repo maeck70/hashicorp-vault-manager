@@ -1,3 +1,6 @@
+// views_struct_builder.go implements the interactive sub-form wizard for
+// creating and editing structured JSON secrets (e.g. RabbitMQ, PostgreSQL, Redis).
+
 package tui
 
 import (
@@ -9,6 +12,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
+// handleStructBuilderKeys handles preset cycling, sub-field editing, and applying JSON strings.
 func (m Model) handleStructBuilderKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	switch msg.String() {
 	case "esc":
