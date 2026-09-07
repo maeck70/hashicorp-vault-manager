@@ -41,3 +41,41 @@ func TestSaveToEnv(t *testing.T) {
 		t.Errorf("expected KEEP_ME=yes to be preserved in content: %s", content)
 	}
 }
+
+func TestLoadFromArgs(t *testing.T) {
+	// Test 1: -get flag with format and field
+	cfg, err := LoadFromArgs([]string{"-get", "services/auth", "-field", "token", "-format", "raw"})
+	if err != nil {
+		t.Fatalf("LoadFromArgs failed: %v", err)
+	}
+	if cfg.GetPath != "services/auth" {
+		t.Errorf("expected GetPath 'services/auth', got %q", cfg.GetPath)
+	}
+	if cfg.Field != "token" {
+		t.Errorf("expected Field 'token', got %q", cfg.Field)
+	}
+	if cfg.Format != "raw" {
+		t.Errorf("expected Format 'raw', got %q", cfg.Format)
+	}
+
+	// Test 2: positional "get" argument with -json flag
+	cfg2, err := LoadFromArgs([]string{"get", "databases/mysql", "-json"})
+	if err != nil {
+		t.Fatalf("LoadFromArgs failed: %v", err)
+	}
+	if cfg2.GetPath != "databases/mysql" {
+		t.Errorf("expected GetPath 'databases/mysql', got %q", cfg2.GetPath)
+	}
+	if cfg2.Format != "json" {
+		t.Errorf("expected Format 'json', got %q", cfg2.Format)
+	}
+
+	// Test 3: direct path argument
+	cfg3, err := LoadFromArgs([]string{"api/stripe"})
+	if err != nil {
+		t.Fatalf("LoadFromArgs failed: %v", err)
+	}
+	if cfg3.GetPath != "api/stripe" {
+		t.Errorf("expected GetPath 'api/stripe', got %q", cfg3.GetPath)
+	}
+}

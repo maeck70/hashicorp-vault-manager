@@ -1,8 +1,9 @@
-// Package main is the entry point for the HashiCorp Vault TUI application.
+// Package main is the entry point for the HashiCorp Vault manager application.
 //
-// It parses CLI flags, merges environment variables from .env, initializes
-// the standard-library Vault HTTP client, and launches the Bubble Tea
-// terminal user interface in alternate screen buffer mode.
+// It supports two execution modes:
+//  1. CLI Secret Retrieval: when -get <path> or positional arguments are passed,
+//     the secret is fetched directly to stdout and the application exits without starting the TUI.
+//  2. Interactive TUI: launches the full Bubble Tea terminal interface in alternate screen buffer mode.
 package main
 
 import (
@@ -11,6 +12,7 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 
+	"vault-experiment/internal/cli"
 	"vault-experiment/internal/config"
 	"vault-experiment/internal/tui"
 	"vault-experiment/internal/vault"
@@ -27,10 +29,19 @@ func main() {
 	// 2. Instantiate the pure Go standard library HTTP client for Vault.
 	client := vault.NewClient(cfg.Address, cfg.Token, cfg.Mount)
 
-	// 3. Build the root Bubble Tea model with configuration and Vault client.
+	// 3. CLI Mode: If a secret path is requested, retrieve and output directly without initiating TUI.
+	if cfg.GetPath != "" {
+		if err := cli.RunGetSecret(client, cfg); err != nil {
+			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+			os.Exit(1)
+		}
+		return
+	}
+
+	// 4. Build the root Bubble Tea model with configuration and Vault client.
 	model := tui.NewModel(cfg, client)
 
-	// 4. Run the Bubble Tea program with alternate screen buffer support.
+	// 5. Run the Bubble Tea program with alternate screen buffer support.
 	p := tea.NewProgram(model, tea.WithAltScreen())
 	if _, err := p.Run(); err != nil {
 		fmt.Fprintf(os.Stderr, "Error running Vault TUI: %v\n", err)

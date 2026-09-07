@@ -93,6 +93,25 @@ Or specify custom flags:
 
 ---
 
+### Non-Interactive CLI Secret Retrieval (Bypassing TUI)
+
+Retrieve secrets directly from the command line without launching the terminal user interface:
+
+```bash
+# Formatted table output (with automatic nested JSON formatting)
+./bin/vault-tui get infra/services
+./bin/vault-tui -get infra/services
+
+# Extract a single field value (ideal for shell scripts & environment variables)
+DB_PASS=$(./bin/vault-tui get infra/services -field password)
+
+# Output raw JSON for scripts or piping to jq
+./bin/vault-tui get infra/services -json
+./bin/vault-tui -get infra/services -format json | jq .data
+```
+
+---
+
 ## Configuration
 
 Configuration is loaded with the following precedence:
@@ -104,6 +123,10 @@ Configuration is loaded with the following precedence:
 
 | Flag | Description | Default |
 | :--- | :--- | :--- |
+| `-get` / `-read` | Retrieve a secret path directly via CLI without launching TUI | `""` |
+| `-field` | Extract and print only the specified field value to stdout | `""` |
+| `-format` | Output format for CLI retrieval (`table`, `json`, `raw`) | `table` |
+| `-json` | Output secret data as JSON (shorthand for `-format=json`) | `false` |
 | `-addr` | Vault server URL | `http://10.0.0.180:8200` (or `$VAULT_ADDR`) |
 | `-token` | Vault authentication token | `$VAULT_TOKEN` |
 | `-mount` | KV v2 secret engine mount path | `secret` (or `$VAULT_MOUNT`) |

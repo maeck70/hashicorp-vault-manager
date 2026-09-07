@@ -33,11 +33,25 @@ type Config struct {
 
 	// EnvFile is the path to the environment file (default: ".env").
 	EnvFile string
+
+	// GetPath specifies a secret path to retrieve directly via CLI (bypassing the TUI).
+	GetPath string
+
+	// Field specifies a single secret field to extract and print to stdout.
+	Field string
+
+	// Format specifies the CLI output format ("table", "json", or "raw").
+	Format string
 }
 
 // Load parses command-line flags and merges with environment variables / .env file.
-// It initializes a custom FlagSet to prevent interference during testing.
 func Load() (*Config, error) {
+	return LoadFromArgs(os.Args[1:])
+}
+
+// LoadFromArgs parses command-line arguments and configuration settings.
+// It initializes a custom FlagSet to prevent interference during testing.
+func LoadFromArgs(args []string) (*Config, error) {
 	fs := flag.NewFlagSet("vault-tui", flag.ContinueOnError)
 
 	var envFile string
@@ -65,7 +79,34 @@ func Load() (*Config, error) {
 	mountFlag := fs.String("mount", defaultMount, "KV v2 mount path")
 	unsealFlag := fs.String("unseal-key", defaultUnsealKey, "Vault unseal key (if unsealing via flag)")
 
-	if err := fs.Parse(os.Args[1:]); err != nil {
+	var getFlag string
+	fs.StringVar(&getFlag, "get", "", "Retrieve a secret path directly via CLI without starting TUI")
+	fs.StringVar(&getFlag, "read", "", "Alias for -get")
+
+	var fieldFlag string
+	fs.StringVar(&fieldFlag, "field", "", "Extract and print only the specified field value")
+
+	var formatFlag string
+	fs.StringVar(&formatFlag, "format", "table", "Output format: table, json, or raw")
+
+	var jsonFlag bool
+	fs.BoolVar(&jsonFlag, "json", false, "Output secret data as JSON (shorthand for -format=json)")
+
+	var positionalGet string
+	cleanArgs := make([]string, 0, len(args))
+	for i := 0; i < len(args); i++ {
+		arg := args[i]
+		if (arg == "get" || arg == "read") && positionalGet == "" {
+			if i+1 < len(args) && !strings.HasPrefix(args[i+1], "-") {
+				positionalGet = args[i+1]
+				i++
+			}
+			continue
+		}
+		cleanArgs = append(cleanArgs, arg)
+	}
+
+	if err := fs.Parse(cleanArgs); err != nil {
 		return nil, err
 	}
 
@@ -78,12 +119,32 @@ func Load() (*Config, error) {
 	// Clean address (remove trailing slash)
 	addr := strings.TrimRight(*addrFlag, "/")
 
+	// Support positional arguments: e.g. "vault-tui get webapp/db" or "vault-tui webapp/db"
+	if getFlag == "" {
+		if positionalGet != "" {
+			getFlag = positionalGet
+		} else {
+			remaining := fs.Args()
+			if len(remaining) > 0 && !strings.HasPrefix(remaining[0], "-") {
+				getFlag = remaining[0]
+			}
+		}
+	}
+
+	fmtChoice := strings.ToLower(strings.TrimSpace(formatFlag))
+	if jsonFlag {
+		fmtChoice = "json"
+	}
+
 	return &Config{
 		Address:   addr,
 		Token:     *tokenFlag,
 		Mount:     mount,
 		UnsealKey: *unsealFlag,
 		EnvFile:   envFile,
+		GetPath:   strings.Trim(getFlag, "/"),
+		Field:     fieldFlag,
+		Format:    fmtChoice,
 	}, nil
 }
 
