@@ -1,0 +1,11 @@
+# Binaries
+bin/
+*.exe
+*.test
+
+# Environment & credentials
+.env
+
+# OS and Editor files
+.DS_Store
+.vscode/
