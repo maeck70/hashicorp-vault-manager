@@ -29,7 +29,34 @@ func main() {
 	// 2. Instantiate the pure Go standard library HTTP client for Vault.
 	client := vault.NewClient(cfg.Address, cfg.Token, cfg.Mount)
 
-	// 3. CLI Mode: If a secret path is requested, retrieve and output directly without initiating TUI.
+	// 3. CLI Mode: If a CLI operation is specified, execute directly without initiating TUI.
+	switch cfg.Command {
+	case "get":
+		if err := cli.RunGetSecret(client, cfg); err != nil {
+			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+			os.Exit(1)
+		}
+		return
+	case "put":
+		if err := cli.RunPutSecret(client, cfg); err != nil {
+			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+			os.Exit(1)
+		}
+		return
+	case "delete":
+		if err := cli.RunDeleteSecret(client, cfg); err != nil {
+			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+			os.Exit(1)
+		}
+		return
+	case "list":
+		if err := cli.RunListSecrets(client, cfg); err != nil {
+			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+			os.Exit(1)
+		}
+		return
+	}
+
 	if cfg.GetPath != "" {
 		if err := cli.RunGetSecret(client, cfg); err != nil {
 			fmt.Fprintf(os.Stderr, "Error: %v\n", err)

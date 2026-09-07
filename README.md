@@ -93,21 +93,76 @@ Or specify custom flags:
 
 ---
 
-### Non-Interactive CLI Secret Retrieval (Bypassing TUI)
+### Non-Interactive CLI Operations (Bypassing TUI)
 
-Retrieve secrets directly from the command line without launching the terminal user interface:
+Perform complete secret lifecycle management (create, update, retrieve, list, and delete) directly from the command line without launching the terminal user interface:
+
+#### 1. Create Secrets (`put` / `set` / `write`)
+
+```bash
+# Create or overwrite a secret using key=value pairs
+./bin/vault-tui put services/auth username=alice role=admin env=prod
+
+# Create using JSON string payload
+./bin/vault-tui put infra/redis -data '{"host":"10.0.0.10","port":6379}'
+
+# Create using a JSON file payload
+./bin/vault-tui put infra/rabbitmq -data @rabbitmq.json
+
+# Return structured JSON output for automated pipelines
+./bin/vault-tui put services/auth username=bob -json
+```
+
+#### 2. Update Secrets (`update` / `put -merge`)
+
+```bash
+# Update specific fields while preserving existing keys (merge mode)
+./bin/vault-tui update services/auth role=superadmin
+
+# Alternatively, use put with -merge flag
+./bin/vault-tui put services/auth new_key=value -merge
+```
+
+#### 3. Retrieve Secrets (`get` / `read`)
 
 ```bash
 # Formatted table output (with automatic nested JSON formatting)
-./bin/vault-tui get infra/services
-./bin/vault-tui -get infra/services
+./bin/vault-tui get services/auth
 
 # Extract a single field value (ideal for shell scripts & environment variables)
-DB_PASS=$(./bin/vault-tui get infra/services -field password)
+TOKEN=$(./bin/vault-tui get services/auth -field token)
 
 # Output raw JSON for scripts or piping to jq
-./bin/vault-tui get infra/services -json
-./bin/vault-tui -get infra/services -format json | jq .data
+./bin/vault-tui get services/auth -json | jq .data
+```
+
+#### 4. List Secrets (`list` / `ls`)
+
+```bash
+# List all secrets at root
+./bin/vault-tui list
+
+# List secrets under a specific path prefix
+./bin/vault-tui list services/
+
+# Output list as JSON
+./bin/vault-tui list services/ -json
+```
+
+#### 5. Delete Secrets (`delete` / `del` / `rm`)
+
+```bash
+# Permanently purge secret metadata & all versions (prompts for confirmation)
+./bin/vault-tui delete services/auth
+
+# Bypass interactive confirmation with -f / -force
+./bin/vault-tui delete services/auth -f
+
+# Perform a KV v2 soft-delete (marks latest version deleted without purging metadata)
+./bin/vault-tui delete services/auth -soft -f
+
+# Output deletion status as JSON
+./bin/vault-tui delete services/auth -f -json
 ```
 
 ---
@@ -115,18 +170,26 @@ DB_PASS=$(./bin/vault-tui get infra/services -field password)
 ## Configuration
 
 Configuration is loaded with the following precedence:
-1. Command-line flags
+1. Command-line flags and subcommands
 2. Environment variables / `.env` file
 3. Built-in defaults
 
-### Command-Line Flags
+### Command-Line Flags & Subcommands
 
-| Flag | Description | Default |
+| Subcommand / Flag | Description | Default |
 | :--- | :--- | :--- |
-| `-get` / `-read` | Retrieve a secret path directly via CLI without launching TUI | `""` |
+| `put` / `-put` | Create or replace a secret (`put <path> key=val...` or `-data '<json>'`) | `""` |
+| `update` | Update/merge secret keys (`update <path> key=val...`) | `""` |
+| `get` / `-get` | Retrieve a secret path directly via CLI without launching TUI | `""` |
+| `list` / `ls` / `-list` | List secrets under root or a specified prefix | `""` |
+| `delete` / `del` / `-delete` | Delete secret permanently (`-f` to skip confirmation, `-soft` for soft-delete) | `""` |
+| `-data` | Secret data payload as inline JSON string or `@filepath` | `""` |
+| `-merge` | Merge with existing secret keys during put/update | `false` |
+| `-f` / `-force` | Skip interactive deletion confirmation prompt | `false` |
+| `-soft` | Perform soft-delete instead of permanent metadata destruction | `false` |
 | `-field` | Extract and print only the specified field value to stdout | `""` |
-| `-format` | Output format for CLI retrieval (`table`, `json`, `raw`) | `table` |
-| `-json` | Output secret data as JSON (shorthand for `-format=json`) | `false` |
+| `-format` | Output format for CLI commands (`table`, `json`, `raw`) | `table` |
+| `-json` | Output data as JSON (shorthand for `-format=json`) | `false` |
 | `-addr` | Vault server URL | `http://10.0.0.180:8200` (or `$VAULT_ADDR`) |
 | `-token` | Vault authentication token | `$VAULT_TOKEN` |
 | `-mount` | KV v2 secret engine mount path | `secret` (or `$VAULT_MOUNT`) |

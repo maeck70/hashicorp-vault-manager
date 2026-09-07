@@ -78,4 +78,87 @@ func TestLoadFromArgs(t *testing.T) {
 	if cfg3.GetPath != "api/stripe" {
 		t.Errorf("expected GetPath 'api/stripe', got %q", cfg3.GetPath)
 	}
+	if cfg3.Command != "get" {
+		t.Errorf("expected Command 'get', got %q", cfg3.Command)
+	}
+}
+
+func TestLoadFromArgs_CRUD(t *testing.T) {
+	// Test put with key-value pairs
+	cfgPut, err := LoadFromArgs([]string{"put", "services/payment", "api_key=sk_test_123", "env=prod", "-json"})
+	if err != nil {
+		t.Fatalf("LoadFromArgs put failed: %v", err)
+	}
+	if cfgPut.Command != "put" {
+		t.Errorf("expected Command 'put', got %q", cfgPut.Command)
+	}
+	if cfgPut.TargetPath != "services/payment" {
+		t.Errorf("expected TargetPath 'services/payment', got %q", cfgPut.TargetPath)
+	}
+	if cfgPut.DataArgs["api_key"] != "sk_test_123" || cfgPut.DataArgs["env"] != "prod" {
+		t.Errorf("unexpected DataArgs: %+v", cfgPut.DataArgs)
+	}
+	if cfgPut.Format != "json" {
+		t.Errorf("expected Format 'json', got %q", cfgPut.Format)
+	}
+
+	// Test update with merge flag
+	cfgUpdate, err := LoadFromArgs([]string{"update", "services/payment", "api_key=sk_live_999"})
+	if err != nil {
+		t.Fatalf("LoadFromArgs update failed: %v", err)
+	}
+	if cfgUpdate.Command != "put" || !cfgUpdate.Merge {
+		t.Errorf("expected Command 'put' with Merge=true, got command=%q, merge=%v", cfgUpdate.Command, cfgUpdate.Merge)
+	}
+	if cfgUpdate.DataArgs["api_key"] != "sk_live_999" {
+		t.Errorf("unexpected DataArgs: %+v", cfgUpdate.DataArgs)
+	}
+
+	// Test put with -data json string
+	cfgData, err := LoadFromArgs([]string{"put", "infra/redis", "-data", `{"host":"localhost","port":"6379"}`})
+	if err != nil {
+		t.Fatalf("LoadFromArgs -data failed: %v", err)
+	}
+	if cfgData.Command != "put" || cfgData.RawData != `{"host":"localhost","port":"6379"}` {
+		t.Errorf("unexpected RawData: %q", cfgData.RawData)
+	}
+
+	// Test delete with force and soft flags
+	cfgDel, err := LoadFromArgs([]string{"delete", "legacy/creds", "-f", "-soft"})
+	if err != nil {
+		t.Fatalf("LoadFromArgs delete failed: %v", err)
+	}
+	if cfgDel.Command != "delete" {
+		t.Errorf("expected Command 'delete', got %q", cfgDel.Command)
+	}
+	if cfgDel.TargetPath != "legacy/creds" {
+		t.Errorf("expected TargetPath 'legacy/creds', got %q", cfgDel.TargetPath)
+	}
+	if !cfgDel.Force || !cfgDel.SoftDelete {
+		t.Errorf("expected Force=true and SoftDelete=true, got force=%v, soft=%v", cfgDel.Force, cfgDel.SoftDelete)
+	}
+
+	// Test list with prefix
+	cfgList, err := LoadFromArgs([]string{"list", "services/", "-json"})
+	if err != nil {
+		t.Fatalf("LoadFromArgs list failed: %v", err)
+	}
+	if cfgList.Command != "list" {
+		t.Errorf("expected Command 'list', got %q", cfgList.Command)
+	}
+	if cfgList.Prefix != "services" {
+		t.Errorf("expected Prefix 'services', got %q", cfgList.Prefix)
+	}
+	if cfgList.Format != "json" {
+		t.Errorf("expected Format 'json', got %q", cfgList.Format)
+	}
+
+	// Test empty args defaults to TUI
+	cfgEmpty, err := LoadFromArgs([]string{})
+	if err != nil {
+		t.Fatalf("LoadFromArgs empty failed: %v", err)
+	}
+	if cfgEmpty.Command != "" {
+		t.Errorf("expected empty Command for TUI, got %q", cfgEmpty.Command)
+	}
 }
