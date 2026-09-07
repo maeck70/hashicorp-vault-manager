@@ -7,19 +7,19 @@ import "github.com/charmbracelet/lipgloss"
 // Palette holds the vibrant, modern color scheme for the Vault TUI.
 var (
 	// Colors
-	ColorPrimary   = lipgloss.Color("#b388ff") // Neon Purple / Lilac
+	ColorPrimary     = lipgloss.Color("#b388ff") // Neon Purple / Lilac
 	ColorPrimaryDark = lipgloss.Color("#7c4dff")
-	ColorSecondary = lipgloss.Color("#00f0ff") // Cyber Cyan
-	ColorSuccess   = lipgloss.Color("#00e676") // Vibrant Green
-	ColorWarning   = lipgloss.Color("#ffb300") // Amber
-	ColorDanger    = lipgloss.Color("#ff1744") // Coral Red
-	ColorMuted     = lipgloss.Color("#6b7280") // Subtle Slate
-	ColorText      = lipgloss.Color("#f8fafc") // Bright White
-	ColorTextDim   = lipgloss.Color("#94a3b8") // Dim Silver
-	ColorBgDark    = lipgloss.Color("#0f172a") // Deep Navy Slate
-	ColorBgCard    = lipgloss.Color("#1e293b") // Surface Navy
-	ColorHighlight = lipgloss.Color("#ffd600") // Bright Yellow
-	ColorBorder    = lipgloss.Color("#334155") // Subtle Border Slate
+	ColorSecondary   = lipgloss.Color("#00f0ff") // Cyber Cyan
+	ColorSuccess     = lipgloss.Color("#00e676") // Vibrant Green
+	ColorWarning     = lipgloss.Color("#ffb300") // Amber
+	ColorDanger      = lipgloss.Color("#ff1744") // Coral Red
+	ColorMuted       = lipgloss.Color("#6b7280") // Subtle Slate
+	ColorText        = lipgloss.Color("#f8fafc") // Bright White
+	ColorTextDim     = lipgloss.Color("#94a3b8") // Dim Silver
+	ColorBgDark      = lipgloss.Color("#0f172a") // Deep Navy Slate
+	ColorBgCard      = lipgloss.Color("#1e293b") // Surface Navy
+	ColorHighlight   = lipgloss.Color("#ffd600") // Bright Yellow
+	ColorBorder      = lipgloss.Color("#334155") // Subtle Border Slate
 
 	// Header Styles
 	StyleTitle = lipgloss.NewStyle().
@@ -155,4 +155,3 @@ var (
 				Background(ColorBgDark).
 				Padding(0, 1)
 )
-

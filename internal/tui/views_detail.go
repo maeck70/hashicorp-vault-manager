@@ -234,4 +234,3 @@ func (m Model) renderDetailView() string {
 		helpHints,
 	)
 }
-

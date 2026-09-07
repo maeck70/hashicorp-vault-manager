@@ -697,4 +697,3 @@ func (m Model) buildStructJSONString() string {
 	b, _ := json.Marshal(data)
 	return string(b)
 }
-

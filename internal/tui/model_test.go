@@ -328,5 +328,3 @@ func TestTUI_DetailView_GenerateGoCode(t *testing.T) {
 		t.Errorf("expected secret path in generated file: %s", string(data))
 	}
 }
-
-
